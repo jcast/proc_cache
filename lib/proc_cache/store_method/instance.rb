@@ -15,5 +15,9 @@ module ProcCache::StoreMethod
       @__proc_cache.delete(key)
     end
     
+    def proc_cache_keys
+      @__proc_cache.keys
+    end
+    
   end
 end

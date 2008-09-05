@@ -1,7 +1,4 @@
 require File.dirname(__FILE__) + "/proc_cache/store"
-#Dir.foreach(File.dirname(__FILE__) + "/proc_cache/store_method") do |file|
-#  require File.dirname(__FILE__) + "/proc_cache/store_method/#{file}" if file =~ /\.rb$/
-#end
 
 module ProcCache
   
@@ -15,10 +12,6 @@ module ProcCache
   	set_proc_cache(key, cached_proc)
   	return value
   end
-  
-  # def proc_caches
-  #   @@__proc_cache
-  # end
   
   def proc_cached?(key)
     !get_proc_cache(key).nil?
