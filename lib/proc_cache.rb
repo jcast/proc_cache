@@ -1,12 +1,12 @@
-require File.dirname(__FILE__) + "/proc_store"
-require File.dirname(__FILE__) + "/store_method"
+require File.dirname(__FILE__) + "/proc_cache/store"
+require File.dirname(__FILE__) + "/proc_cache/store_method"
 
 module ProcCache
   
 	def proc_cache(key, *args, &block)
 	  expiration_condition, cached_args = parse_args(args)
     cached_proc = store_method[:get].call(key)
-  	cached_proc = ProcStore.new(expiration_condition) if !cached_proc || cached_proc.expired?(cached_args)
+  	cached_proc = ProcCache::Store.new(expiration_condition) if !cached_proc || cached_proc.expired?(cached_args)
   	value = cached_proc.get(cached_args, block)
   	store_method[:set].call(key, cached_proc)
   	return value
@@ -21,19 +21,20 @@ module ProcCache
   end
   
   
-  # Allow user to define where and how procs are cached
-	def proc_uncache(key)
-	  store_method[:delete].call(key)
-  end
-  
-  def store_method
-    @__proc_store_method ||= ProcCache.store_method || StoreMethod.instance(self)
+  # Allow user to define where and how procs are cached per instance use
+	def store_method
+    @__proc_store_method ||= ProcCache.store_method || ProcCache::StoreMethod.instance(self)
   end
   
   def store_method=(hash)
     @__proc_store_method = hash
   end
   
+  def proc_uncache(key)
+	  store_method[:delete].call(key)
+  end
+  
+  # Allow user to define where and how procs are cached globally / by default
   @@store_method = nil
   
   def self.store_method
@@ -56,7 +57,7 @@ module ProcCache
   
   def parse_args(args)
     condition = nil
-    condition = args.shift if ProcStore.valid_condition?(args[0])
+    condition = args.shift if ProcCache::Store.valid_condition?(args[0])
     return condition, args
   end
 	
