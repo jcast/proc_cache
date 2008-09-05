@@ -20,7 +20,7 @@ module ProcCache
       @last_arg_pattern = arg_pattern
       @caches[arg_pattern] ||= block.call
     end
-  
+    
     def expired?(arg_pattern=@last_arg_pattern)
       return true if @expired
       args = @expire_condition.arity < 0 ? arg_pattern : arg_pattern[0..@expire_condition.arity-1]
