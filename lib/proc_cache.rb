@@ -1,14 +1,18 @@
 require File.dirname(__FILE__) + "/proc_cache/store"
-require File.dirname(__FILE__) + "/proc_cache/store_method"
+Dir.foreach(File.dirname(__FILE__) + "/proc_cache/store_method") do |file|
+  require File.dirname(__FILE__) + "/proc_cache/store_method/#{file}" if file =~ /\.rb$/
+end
 
 module ProcCache
   
 	def proc_cache(key, *args, &block)
+	  self.store_method ||= ProcCache.store_method || ProcCache::StoreMethod::Instance
+	  
 	  expiration_condition, cached_args = parse_args(args)
-    cached_proc = store_method[:get].call(key)
+    cached_proc = self.get_proc_cache(key)
   	cached_proc = ProcCache::Store.new(expiration_condition) if !cached_proc || cached_proc.expired?(cached_args)
   	value = cached_proc.get(cached_args, block)
-  	store_method[:set].call(key, cached_proc)
+  	set_proc_cache(key, cached_proc)
   	return value
   end
   
@@ -17,21 +21,22 @@ module ProcCache
   # end
   
   def proc_cached?(key)
-    !store_method[:get].call(key).nil?
+    !get_proc_cache(key).nil?
   end
   
   
   # Allow user to define where and how procs are cached per instance use
 	def store_method
-    @__proc_store_method ||= ProcCache.store_method || ProcCache::StoreMethod.instance(self)
+    @__proc_store_method
   end
   
-  def store_method=(hash)
-    @__proc_store_method = hash
+  def store_method=(mod)
+    @__proc_store_method = mod
+    self.extend(mod)
   end
   
   def proc_uncache(key)
-	  store_method[:delete].call(key)
+	  delete_proc_cache(key)
   end
   
   # Allow user to define where and how procs are cached globally / by default
@@ -40,17 +45,10 @@ module ProcCache
   def self.store_method
     @@store_method
   end
-
-  def self.set_method(*args, &block)
-    @@store_method[:set] = block if block_given?
-  end
-
-  def self.get_method(*args, &block)
-    @@store_method[:get] = block if block_given?
-  end
   
-  def self.delete_method(*args, &block)
-    @@store_method[:delete] = block if block_given?
+  def self.store_method=(mod)
+    @@store_method = mod
+    self.extend(mod)
   end
   
   private
