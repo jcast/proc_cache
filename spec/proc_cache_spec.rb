@@ -21,6 +21,7 @@ describe ProcCache do
     
     @test.with_args(1,2,4)
     @test.time_diff.should <= 1
+    
     @test.with_args(1,2,3)
     @test.time_diff.should <= 1
   end

@@ -1,26 +1,27 @@
-require File.dirname(__FILE__) + "/proc_cache/store"
-
 module ProcCache
   
 	def proc_cache(key, *args, &block)
-	  self.store_method ||= ProcCache.store_method || :instance
-	  
+	  @__proc_cache ||= {}
 	  expiration_condition, cached_args = parse_args(args)
-    cached_proc = get_proc_cache(key)
-  	cached_proc = ProcCache::Store.new(expiration_condition) if !cached_proc || cached_proc.expired?(cached_args)
-  	value = cached_proc.get(cached_args, block)
-  	set_proc_cache(key, cached_proc)
+  	if !@__proc_cache[key] || @__proc_cache[key].expired?(cached_args)
+  	  @__proc_cache[key] = ProcCache::Store.new(key, expiration_condition)
+  	  @__proc_cache[key].extend(store_method) if store_method
+	  end
+  	value = @__proc_cache[key].get(cached_args) || @__proc_cache[key].set(cached_args, block.call)
   	return value
   end
   
   def proc_cached?(key)
-    !get_proc_cache(key).nil?
+    !@__proc_cache[key].nil?
   end
   
+  def proc_cache_keys
+    @__proc_cache.keys
+  end
   
   # Allow user to define where and how procs are cached per instance use
 	def store_method
-    @__proc_store_method
+    @__proc_store_method || nil
   end
   
   def store_method=(mod)
@@ -68,3 +69,6 @@ module ProcCache
   end
 	
 end
+
+class ProcCacheException < Exception; end
+require File.dirname(__FILE__) + "/proc_cache/store"
