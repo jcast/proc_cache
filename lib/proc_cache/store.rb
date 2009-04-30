@@ -13,7 +13,7 @@ module ProcCache
       @keys = {}
       @expired = false
       @last_arg_pattern = []
-    
+      
       @expire_condition = case exp_condition
       when Proc
         exp_condition
